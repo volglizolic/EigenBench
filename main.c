@@ -52,9 +52,17 @@ int main(int argc, char **argv) {
         random_index_A3_arrays[i] = create_index_array(A3 * times, A3);
     }
 
+#if defined(__riscv)
+#include "hpc_utils.h"
+
+    hpc_snapshot_t begin, end, res;
+    if(data.time)
+        hpc_get_local_snapshot(&begin);
+#else
     clock_t begin = 0, end;
     if(data.time)
         begin = clock();
+#endif
     STM_STARTUP();
     for_thread_t for_thread[no_threads];
     pthread_t threads[no_threads];
@@ -71,11 +79,20 @@ int main(int argc, char **argv) {
     }
     for(int i = 0; i < no_threads; i++) pthread_join(threads[i], NULL);
     STM_SHUTDOWN();
-    if(data.time){
+#ifdef __riscv
+    if(data.time) {
+        hpc_get_local_snapshot(&end);
+        hpc_snapshot_diff(&res, &end, &begin);
+        printf("%-25s%-10lld\n%-25s%-10lld\n", "Main execution time: ", res.time, "Instructions retired: ", res.instr_ret);
+    }
+#else
+    if(data.time) {
         end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        double time_spent = (double) (end - begin) / CLOCKS_PER_SEC;
         printf("Main execution time: %f\n", time_spent);
     }
+#endif
+
     return 0;
 }
 
@@ -141,7 +158,7 @@ test_core(int t_id, int loops, bool persist, int R1, int W1, int R2, int W2, int
         STM_END();
         if((i % k_o) == 0)
             for (int k = 0; k < R3_o + W3_o + Nop_o; ++k) {
-                int temp = (int) rand() % 2, r3 = R3_o, w3 = W3_o;
+                int temp = (int) xorshf96() % 2, r3 = R3_o, w3 = W3_o;
                 if(temp == 0 && w3 > 0) {
                     val = Array3[t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])];
                     w3--;

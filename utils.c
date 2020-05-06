@@ -10,7 +10,7 @@
 static const int values[] = {
         [TIME] = false,
         [A1] = 1000, [A2] = 1000, [A3] = 1000, [THREADS] = 4,
-        [LOOPS] = 50000, [PERSIST] = true, [R1] = 50, [W1] = 20,  [R2] = 50,  [W2] = 20,
+        [LOOPS] = 500, [PERSIST] = true, [R1] = 50, [W1] = 20,  [R2] = 50,  [W2] = 20,
         [R3I] = 10,  [W3I] = 10,  [NOPI] = 20,  [KI] = 50,
         [R3O] = 100,  [W3O] = 100,  [NOPO] = 150,  [KO] = 50
 };
