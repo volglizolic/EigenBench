@@ -15,6 +15,7 @@ typedef struct {
     int loops; bool persistent; int R1; int W1; int R2; int W2;
     int R3_i; int W3_i; int Nop_i; int k_i;
     int R3_o; int W3_o; int Nop_o; int k_o;
+    float lct;
 }data_t;
 
 enum {
@@ -22,7 +23,8 @@ enum {
     A1, A2, A3, THREADS,
     LOOPS, PERSIST, R1, W1, R2, W2,
     R3I, W3I, NOPI, KI,
-    R3O, W3O, NOPO, KO
+    R3O, W3O, NOPO, KO,
+    LCT
 };
 
 void *x_malloc(size_t size);

@@ -9,10 +9,11 @@
 
 static const int values[] = {
         [TIME] = false,
-        [A1] = 1000, [A2] = 1000, [A3] = 1000, [THREADS] = 4,
-        [LOOPS] = 500, [PERSIST] = true, [R1] = 50, [W1] = 20,  [R2] = 50,  [W2] = 20,
-        [R3I] = 10,  [W3I] = 10,  [NOPI] = 20,  [KI] = 50,
-        [R3O] = 100,  [W3O] = 100,  [NOPO] = 150,  [KO] = 50
+        [A1] = 0, [A2] = 32768, [A3] = 0, [THREADS] = 4,
+        [LOOPS] = 10000, [PERSIST] = false, [LCT] = 0,
+        [R1] = 0, [W1] = 0,  [R2] = 90,  [W2] = 10,
+        [R3I] = 0,  [W3I] = 0,  [NOPI] = 0,  [KI] = 20,
+        [R3O] = 0,  [W3O] = 0,  [NOPO] = 0,  [KO] = 20
 };
 
 //static char * const token[] = {
@@ -30,6 +31,7 @@ static struct option long_options[] = {
         {"a3", required_argument, 0,  A3 },
         {"loops", required_argument, 0,  'l' },
         {"persistent", required_argument, 0,  'p' },
+        {"lct", required_argument, 0,  LCT },
         {"r1", required_argument, 0,  R1 },
         {"w1", required_argument, 0,  W1 },
         {"r2", required_argument, 0,  R2 },
@@ -65,7 +67,8 @@ void print_help(char *name){
     PRINT_OPT("", "--a2=A2_SIZE", "Size of Array2 (Mild array), default ", values[A2]);
     PRINT_OPT("", "--a3=A3_SIZE", "Size of Array3 (Cold array), default ", values[A3]);
     PRINT_OPT("-l,", "--loops=LOOPS", "number of loops, default ", values[LOOPS]);
-    PRINT_OPT_NO_DEF("-p,", "--persistent=[y|n]","repeat after abort, default y");
+    PRINT_OPT_NO_DEF("-p,", "--persistent=[y|n]","repeat after abort, default n");
+    PRINT_OPT("","--lct=LCT","Probability of address repetition, default ", values[LCT]);
     PRINT_OPT("","--r1=R1","Reads/tx of Hot array, default ", values[R1]);
     PRINT_OPT("","--w1=W1","Writes/tx of Hot array, default ", values[W1]);
     PRINT_OPT("","--r2=R2","Reads/tx of Mild array, default ", values[R2]);
@@ -92,7 +95,7 @@ void print_help_and_exit(char *name){
 void print_data(data_t *data){
     printf("%-13s%4d\n", "(t)hreads:", data->no_threads);
     printf("%-10s%7d\t%-10s%7d\t%-10s%7d\n", "a1:", data->A1, "a2:", data->A2, "a3:", data->A3);
-    printf("%-10s%7d\t%-13s%4s\n", "(l)oops:", data->loops, "(p)ersistent:", (data->persistent) ? "y" : "n");
+    printf("%-10s%7d\t%-13s%4s\t%-10s%7.3f\n", "(l)oops:", data->loops, "(p)ersistent:", (data->persistent) ? "y" : "n","lct:",data->lct);
     printf("%-10s%7d\t%-10s%7d\n", "r1:", data->R1, "w1:", data->W1);
     printf("%-10s%7d\t%-10s%7d\n", "r2:", data->R2, "w2:", data->W2);
     printf("%-10s%7d\t%-10s%7d\t%-10s%7d	%-10s%7d\n", "r3i:", data->R3_i, "w3i:", data->W3_i, "nopi:", data->Nop_i, "ki:", data->k_i);
@@ -105,7 +108,7 @@ void parse_args(int argc, char **argv, data_t* data){
     char *name = argv[0];
     data->time = values[TIME];
     data->A1 = values[A1]; data->A2 = values[A2]; data->A3 = values[A3]; data->no_threads = values[THREADS];
-    data->loops = values[LOOPS]; data->persistent = values[PERSIST];
+    data->loops = values[LOOPS]; data->persistent = values[PERSIST]; data->lct = (float) values[LCT];
     data->R1 = values[R1]; data->W1 = values[W1]; data->R2 = values[R2]; data->W2 = values[W2];
     data->R3_i = values[R3I]; data->W3_i = values[W3I]; data->Nop_i = values[NOPI]; data->k_i = values[KI];
     data->R3_o = values[R3O]; data->W3_o = values[W3O]; data->Nop_o = values[NOPO]; data->k_o = values[KO];
@@ -132,6 +135,10 @@ void parse_args(int argc, char **argv, data_t* data){
                 if(!(strcmp(optarg, "n") == 0 || strcmp(optarg, "no") == 0 ||
                     strcmp(optarg, "y") == 0 || strcmp(optarg, "yes") == 0 )) print_help_and_exit(name);
                 data->persistent = (strcmp(optarg, "n") == 0 || strcmp(optarg, "no") == 0 )? false : true;
+                break;
+            case LCT:
+                data->lct = strtof(optarg, &subopts);
+                if(optarg == subopts) print_help_and_exit(name);
                 break;
             CASE_DATA(R1, R1)
             CASE_DATA(W1, W1)
