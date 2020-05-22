@@ -44,13 +44,13 @@ int main(int argc, char **argv) {
 
     Array1 = x_malloc(A1 * sizeof(long) * 2);
     offset1 = A1 * sizeof(long);
-    for (int i = 0; i < A1; ++i) Array1[i] = i;
+    for (int i = 0; i < A1; ++i) Array1[i * 2] = i;
     Array2 = x_malloc(A2 * no_threads * sizeof(long) * 2);
     offset2 = A2 * no_threads * sizeof(long);
-    for (int i = 0; i < A2 * no_threads; ++i) Array2[i] = i;
+    for (int i = 0; i < A2 * no_threads; ++i) Array2[i * 2] = i;
     Array3 = x_malloc(A3 * no_threads * sizeof(long) * 2);
     offset3 = A3 * no_threads * sizeof(long);
-    for (int i = 0; i < A3 * no_threads; ++i) Array3[i] = i;
+    for (int i = 0; i < A3 * no_threads; ++i) Array3[i * 2] = i;
 
     visited_a1 = x_malloc(sizeof(int*) * no_threads);
     visited_a2 = x_malloc(sizeof(int*) * no_threads);
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 #ifdef __riscv
     if(data.time) {
         hpc_get_local_snapshot(&end);
-        hpc_snapshot_diff(&res, &end, &begin);
+        hpc_local_snapshot_diff(&res, &end, &begin);
         printf("%-25s%-10lld\n%-25s%-10lld\n", "Main execution time: ", res.time, "Instructions retired: ", res.instr_ret);
     }
 #else
@@ -150,7 +150,7 @@ test_core(int t_id, int loops, bool persist, int R1, int W1, int R2, int W2, int
     int total = R1 + R2 + W1 + W2;
     for (int i = 0; i < loops; ++i) {
         save_random_seed(t_id);
-        STM_BEGIN_WR();
+        STM_BEGIN_PERS();
         if(STM_RETRYING_VAR != 0 && persist)
             restore_random_seed(t_id);
         int visited_pos_a1 = 0, visited_pos_a2 = 0;
@@ -165,9 +165,9 @@ test_core(int t_id, int loops, bool persist, int R1, int W1, int R2, int W2, int
                     visited_a1[t_id][visited_pos_a1++] = index;
                 }
                 if(action == READ1){
-                    val += STM_READ( Array1[index], offset1);
+                    val += STM_READ( Array1[index * 2], 8);
                 } else {
-                    STM_WRITE(Array1[index], val, offset1);
+                    STM_WRITE(Array1[index * 2], val, 8);
                 }
             } else if (action == READ2 || action == WRITE2) {
                 unsigned int index;
@@ -178,19 +178,20 @@ test_core(int t_id, int loops, bool persist, int R1, int W1, int R2, int W2, int
                     visited_a2[t_id][visited_pos_a2++] = index;
                 }
                 if(action == READ2){
-                    val += STM_READ(Array2[t_id * A2 + index], offset2);
+                    val += STM_READ(Array2[(t_id * A2 + index) * 2], 8);
                 } else{
-                    STM_WRITE(Array2[t_id * A2 + index], val, offset2);
+                    STM_WRITE(Array2[(t_id * A2 + index) * 2], val, 8);
                 }
             }
             if ((j % k_i) == 0) {
+                int r3 = R3_i, w3 = W3_i;
                 for (int k = 0; k < R3_i + W3_i + Nop_i; ++k) {
-                    int temp = (int) rand() % 2, r3 = R3_i, w3 = W3_i;
+                    int temp = (int) rand() % 2, index = get_next_int_rand(random_index_A3_arrays[t_id]);
                     if (temp == 0 && w3 > 0) {
-                        STM_WRITE(Array3[t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])], val, offset3);
+                        Array3[(t_id * A3 + index) * 2] = val;
                         w3--;
                     } else if (temp == 1 && r3 > 0) {
-                        val += STM_READ(Array3[t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])], offset3);
+                        val += Array3[(t_id * A3 + index) * 2];
                         r3--;
                     } else {
                         asm("nop");
@@ -203,10 +204,10 @@ test_core(int t_id, int loops, bool persist, int R1, int W1, int R2, int W2, int
             for (int k = 0; k < R3_o + W3_o + Nop_o; ++k) {
                 int temp = (int) xorshf96() % 2, r3 = R3_o, w3 = W3_o;
                 if(temp == 0 && w3 > 0) {
-                    val = Array3[t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])];
+                    Array3[(t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])) * 2] = val;
                     w3--;
                 } else if (temp == 1 && r3 > 0){
-                    val += Array3[t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])];
+                    val += Array3[(t_id * A3 + get_next_int_rand(random_index_A3_arrays[t_id])) * 2];
                     r3--;
                 } else {
                     asm("nop");

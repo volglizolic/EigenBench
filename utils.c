@@ -12,8 +12,8 @@ static const int values[] = {
         [A1] = 0, [A2] = 32768, [A3] = 0, [THREADS] = 4,
         [LOOPS] = 10000, [PERSIST] = false, [LCT] = 0,
         [R1] = 0, [W1] = 0,  [R2] = 90,  [W2] = 10,
-        [R3I] = 0,  [W3I] = 0,  [NOPI] = 0,  [KI] = 20,
-        [R3O] = 0,  [W3O] = 0,  [NOPO] = 0,  [KO] = 20
+        [R3I] = 0,  [W3I] = 0,  [NOPI] = 0,  [KI] = 1,
+        [R3O] = 0,  [W3O] = 0,  [NOPO] = 0,  [KO] = 1
 };
 
 //static char * const token[] = {
